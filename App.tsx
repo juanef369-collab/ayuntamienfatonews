@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Mic, Radio, Send, Zap, Coffee, RefreshCcw, ArrowLeft, Archive, MessageSquare, Scale, Building2, Newspaper, Search, Mail, Twitter, Instagram, Linkedin, Globe, MapPin, User, ChevronRight, AlertTriangle } from 'lucide-react';
 import { NewsArticle, AppView, Redactor } from './types';
@@ -8,6 +9,7 @@ const App: React.FC = () => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Tramitando expediente...');
   const [transcript, setTranscript] = useState('');
   const [keyboardInput, setKeyboardInput] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +24,18 @@ const App: React.FC = () => {
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   
   const [pendingImage, setPendingImage] = useState<string | null>(null);
+
+  const loadingMessages = [
+    "Untando al redactor jefe...",
+    "Extorsionando a la máquina de café...",
+    "Buscando trapos sucios en la Planta 3...",
+    "Traduciendo del 'idioma becario' a titular...",
+    "Imprimiendo mentiras piadosas...",
+    "Sobornando al guardia de seguridad...",
+    "Filtrando audios del concejal...",
+    "Robando el tóner de contabilidad...",
+    "Esperando a que el jefe termine el solitario..."
+  ];
 
   useEffect(() => {
     const dbData = localStorage.getItem('fatonews_db');
@@ -42,6 +56,7 @@ const App: React.FC = () => {
 
   const loadInitialContent = async () => {
     setIsGenerating(true);
+    setLoadingMessage("Iniciando rotativa municipal...");
     try {
       const art = await generateBreakingNews();
       const img = await generateImage(art.imagePrompt);
@@ -56,6 +71,11 @@ const App: React.FC = () => {
   const handleGenerate = async (text: string) => {
     if (isGenerating || !text.trim()) return;
     setIsGenerating(true);
+    
+    const interval = setInterval(() => {
+      setLoadingMessage(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]);
+    }, 2500);
+
     try {
       const article = await generateNewsFromVoice(text);
       const finalImg = pendingImage || await generateImage(article.imagePrompt);
@@ -67,8 +87,20 @@ const App: React.FC = () => {
     } catch (e: any) {
       setError("La rotativa ha explotado.");
     } finally {
+      clearInterval(interval);
       setIsGenerating(false);
     }
+  };
+
+  const startVoice = () => {
+    const SpeechRec = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (!SpeechRec) return;
+    const recognition = new SpeechRec();
+    recognition.lang = 'es-ES';
+    recognition.onstart = () => { setIsRecording(true); setError(null); };
+    recognition.onresult = (event: any) => setTranscript(event.results[0][0].transcript);
+    recognition.onend = () => setIsRecording(false);
+    recognition.start();
   };
 
   const openArticle = (article: NewsArticle) => {
@@ -86,6 +118,19 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen selection:bg-[#5a8a6a] selection:text-white">
+      {/* Overlay de Carga Temático */}
+      {isGenerating && (
+        <div className="fixed inset-0 bg-white/95 z-[200] flex flex-col items-center justify-center p-8 animate-in fade-in duration-300">
+          <div className="w-24 h-24 border-8 border-gray-200 border-t-[#5a8a6a] rounded-full animate-spin mb-8"></div>
+          <h2 className="newspaper-font text-4xl md:text-6xl font-black italic text-center text-black mb-4 tracking-tighter">
+            {loadingMessage}
+          </h2>
+          <p className="text-xs font-black uppercase tracking-[0.5em] text-gray-400 animate-pulse">
+            La rotativa AFN no descansa
+          </p>
+        </div>
+      )}
+
       {/* Ticker Superior canalla */}
       <div className="bg-black text-white py-2 overflow-hidden no-print">
         <div className="animate-ticker">
@@ -179,7 +224,7 @@ const App: React.FC = () => {
                   />
                   <div className="flex gap-2 p-1">
                     <button 
-                      onClick={() => setIsRecording(!isRecording)} 
+                      onClick={startVoice} 
                       className={`p-4 rounded-full transition-all ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-zinc-800 hover:bg-zinc-700'}`}
                     >
                       <Mic size={24}/>
