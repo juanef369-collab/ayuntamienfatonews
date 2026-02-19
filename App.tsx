@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Mic, Radio, Send, Zap, AlertCircle, Coffee, RefreshCcw, Quote, Trash2, ArrowLeft, X, Home, User, LogIn, Camera, Image as ImageIcon, Upload, ShieldCheck, Award, MapPin, Printer, Archive, MessageSquare, History, Scale, Phone, Building2, Gavel, Newspaper, ArrowRight, Search } from 'lucide-react';
+import { Mic, Radio, Send, Zap, AlertCircle, Coffee, RefreshCcw, Quote, Trash2, ArrowLeft, X, Home, User, LogIn, Camera, Image as ImageIcon, Upload, ShieldCheck, Award, MapPin, Printer, Archive, MessageSquare, History, Scale, Phone, Building2, Gavel, Newspaper, ArrowRight, Search, Mail, Twitter, Instagram, Linkedin, ExternalLink } from 'lucide-react';
 import { NewsArticle, AppView, Redactor } from './types';
 import { generateBreakingNews, generateNewsFromVoice, generateImage } from './services/gemini';
 import ArticleCard from './components/ArticleCard';
@@ -12,6 +12,8 @@ const App: React.FC = () => {
   const [keyboardInput, setKeyboardInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [isSubscribed, setIsSubscribed] = useState(false);
   
   const [user, setUser] = useState<Redactor | null>(null);
   const [loginForm, setLoginForm] = useState({ name: '', alias: '', bio: '' });
@@ -62,6 +64,15 @@ const App: React.FC = () => {
       const updated = articles.filter(a => a.id !== id);
       setArticles(updated);
       localStorage.setItem('fatonews_db', JSON.stringify(updated));
+    }
+  };
+
+  const handleNewsletterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newsletterEmail) {
+      setIsSubscribed(true);
+      setNewsletterEmail('');
+      setTimeout(() => setIsSubscribed(false), 5000);
     }
   };
 
@@ -465,20 +476,122 @@ const App: React.FC = () => {
         {renderView()}
       </main>
 
-      <footer className="mt-96 border-t-[20px] border-black border-double pt-40 pb-32 text-center no-print bg-white/50 relative">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#fdfcf8] px-24">
-          <Quote size={120} className="text-black rotate-12 opacity-5" />
+      <footer className="mt-96 bg-black text-white pt-40 pb-20 no-print relative overflow-hidden">
+        {/* Decoración Neo-Brutalista de fondo */}
+        <div className="absolute -top-20 -right-20 opacity-10 rotate-12 scale-150 pointer-events-none">
+          <Building2 size={500} />
         </div>
-        <h2 className="newspaper-font text-8xl font-black uppercase tracking-tighter mb-24 drop-shadow-[10px_10px_0px_#ff0000]">AyuntamienFatoNews</h2>
-        <div className="flex flex-wrap justify-center gap-24 text-lg font-black uppercase tracking-[0.5em] text-gray-400 mb-32 px-10">
-          <button onClick={() => setView('bulo')} className="hover:text-red-600 underline decoration-[8px] underline-offset-[16px] transition-all">Nuestra Historia</button>
-          <button onClick={() => setView('legal')} className="hover:text-red-600 underline decoration-[8px] underline-offset-[16px] transition-all">Código Ético</button>
-          <button onClick={() => setView('contacto')} className="hover:text-red-600 underline decoration-[8px] underline-offset-[16px] transition-all">Ventanilla 4</button>
-          <button onClick={() => setView('archive')} className="hover:text-red-600 underline decoration-[8px] underline-offset-[16px] transition-all">Hemeroteca</button>
-        </div>
-        <div className="flex flex-col items-center gap-10 opacity-30">
-          <p className="text-xs font-black uppercase tracking-[2.5em]">AYUNTAMIENFATONEWS MEDIA GROUP INC.</p>
-          <div className="flex gap-12"><Building2 size={40}/><Scale size={40}/><Archive size={40}/></div>
+        
+        <div className="max-w-7xl mx-auto px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-24 mb-32">
+            
+            {/* Columna 1: Branding & Satire */}
+            <div className="lg:col-span-1 space-y-10">
+              <h2 className="newspaper-font text-5xl font-black uppercase tracking-tighter text-red-600 drop-shadow-[2px_2px_0px_white]">
+                Ayuntamien<br/>FatoNews
+              </h2>
+              <p className="text-xl font-serif italic text-gray-400">
+                "Desde que privatizamos el sentido común, las noticias nunca han sido mejores."
+              </p>
+              <div className="flex gap-6">
+                <a href="#" className="p-3 bg-white text-black neo-border-sm hover:bg-red-600 hover:text-white transition-all"><Twitter size={20}/></a>
+                <a href="#" className="p-3 bg-white text-black neo-border-sm hover:bg-red-600 hover:text-white transition-all"><Instagram size={20}/></a>
+                <a href="#" className="p-3 bg-white text-black neo-border-sm hover:bg-red-600 hover:text-white transition-all"><Linkedin size={20}/></a>
+              </div>
+            </div>
+
+            {/* Columna 2: Secciones & Departamentos */}
+            <div className="lg:col-span-1 space-y-8">
+              <h3 className="text-xs font-black uppercase tracking-[0.4em] text-red-500 border-b border-red-900 pb-2">Departamentos</h3>
+              <ul className="space-y-4 font-black uppercase text-sm tracking-widest text-gray-300">
+                <li><button onClick={() => setView('home')} className="hover:text-red-500 flex items-center gap-3"><Home size={14}/> Portada Principal</button></li>
+                <li><button onClick={() => setView('archive')} className="hover:text-red-500 flex items-center gap-3"><Archive size={14}/> Archivos X (Planta 2)</button></li>
+                <li><button onClick={() => setView('bulo')} className="hover:text-red-500 flex items-center gap-3"><History size={14}/> Nuestra Epopeya</button></li>
+                <li><button onClick={() => setView('legal')} className="hover:text-red-500 flex items-center gap-3"><Scale size={14}/> Burocracia Legal</button></li>
+                <li><a href="#" className="hover:text-red-500 flex items-center gap-3"><Coffee size={14}/> Sindicato del Pincho</a></li>
+                <li><a href="#" className="hover:text-red-500 flex items-center gap-3"><Gavel size={14}/> Tribunal de Rumores</a></li>
+              </ul>
+            </div>
+
+            {/* Columna 3: Estado de la Oficina (Widget dinámico/estático) */}
+            <div className="lg:col-span-1 space-y-8">
+              <h3 className="text-xs font-black uppercase tracking-[0.4em] text-red-500 border-b border-red-900 pb-2">Estado del Edificio</h3>
+              <div className="space-y-6">
+                <div className="bg-zinc-900 p-5 neo-border-sm border-zinc-800">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] font-black uppercase text-gray-500">Máquina de Vending</span>
+                    <span className="text-[10px] font-black text-red-500 animate-pulse">CRÍTICO</span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-300">Solo quedan caramelos de café de 1994 y una bolsa de aire.</p>
+                </div>
+                <div className="bg-zinc-900 p-5 neo-border-sm border-zinc-800">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] font-black uppercase text-gray-500">Ascensor Central</span>
+                    <span className="text-[10px] font-black text-green-500">ESTABLE</span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-300">Funciona, pero huele a brócoli hervido de forma inexplicable.</p>
+                </div>
+                <div className="bg-zinc-900 p-5 neo-border-sm border-zinc-800">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] font-black uppercase text-gray-500">Nivel de Burocracia</span>
+                    <span className="text-[10px] font-black text-yellow-500 uppercase">En aumento</span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-300">Se requiere el formulario A32 firmado por un fantasma.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Columna 4: Suscripción a la Circular */}
+            <div className="lg:col-span-1 space-y-8">
+              <h3 className="text-xs font-black uppercase tracking-[0.4em] text-red-500 border-b border-red-900 pb-2">Circular de las 11:00 AM</h3>
+              <p className="text-sm font-bold text-gray-400">Recibe los chismes antes que el Alcalde. No spam, solo filtraciones de calidad.</p>
+              {!isSubscribed ? (
+                <form onSubmit={handleNewsletterSubmit} className="space-y-4">
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={18} />
+                    <input 
+                      type="email" 
+                      required
+                      placeholder="Tu correo corporativo..." 
+                      className="w-full bg-zinc-900 border-2 border-zinc-700 p-4 pl-12 font-black text-xs uppercase focus:border-red-600 outline-none transition-all"
+                      value={newsletterEmail}
+                      onChange={(e) => setNewsletterEmail(e.target.value)}
+                    />
+                  </div>
+                  <button type="submit" className="w-full bg-red-600 text-white p-4 font-black uppercase text-xs neo-border-sm hover:bg-white hover:text-black transition-all">
+                    SUSCRIBIRME (BAJO MI RIESGO)
+                  </button>
+                </form>
+              ) : (
+                <div className="bg-green-900/20 border-2 border-green-600 p-6 text-center animate-bounce">
+                   <p className="font-black text-green-500 text-xs uppercase tracking-widest">¡FICHADO! Recibirás los chismes pronto.</p>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          <div className="flex flex-col lg:flex-row justify-between items-center pt-20 border-t border-zinc-800 gap-10">
+            <div className="flex items-center gap-10 text-[10px] font-black uppercase tracking-[0.3em] text-gray-600 flex-wrap justify-center">
+              <span>© {new Date().getFullYear()} FATONEWS MEDIA GROUP</span>
+              <button onClick={() => setView('legal')} className="hover:text-white">Aviso Legal</button>
+              <button onClick={() => setView('bulo')} className="hover:text-white">Cookies (De las de comer)</button>
+              <button className="hover:text-white flex items-center gap-2"><Phone size={10}/> Extensiones de Interés</button>
+            </div>
+            
+            <div className="flex items-center gap-6 opacity-20 grayscale hover:opacity-100 transition-all">
+              <Building2 size={32}/>
+              <Scale size={32}/>
+              <Archive size={32}/>
+              <Phone size={32}/>
+            </div>
+          </div>
+          
+          <div className="mt-20 text-center">
+            <p className="text-[10px] font-black uppercase tracking-[2em] text-gray-800">
+              VALORADO COMO EL MEJOR DIARIO POR LA ASOCIACIÓN DE BECARIOS INDIGNADOS
+            </p>
+          </div>
         </div>
       </footer>
     </div>
