@@ -11,8 +11,12 @@
     body { font-family: 'Inter', sans-serif; background-color: #fdfcf8; color: #1a1a1a; overflow-x: hidden; }
     .newspaper-font { font-family: 'Playfair Display', serif; }
     
-    .paper-texture { 
-      background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+    .office-background { 
+      background-color: #fdfcf8;
+      background-image: 
+        radial-gradient(#e5e7eb 1px, transparent 1px),
+        url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+      background-size: 40px 40px, auto;
       background-attachment: fixed;
     }
     
@@ -31,12 +35,12 @@
       box-shadow: 5px 5px 0px 0px rgba(0,0,0,1); 
     }
     
-    /* Sello Municipal Dinámico */
+    /* Sello Municipal con Efecto Tinta */
     .sello-municipal {
       position: absolute;
-      width: 110px;
-      height: 110px;
-      border: 4px double #cc0000;
+      width: 120px;
+      height: 120px;
+      border: 5px double #cc0000;
       border-radius: 50%;
       color: #cc0000;
       display: flex;
@@ -44,26 +48,23 @@
       justify-content: center;
       text-align: center;
       font-weight: 900;
-      font-size: 9px;
+      font-size: 10px;
       text-transform: uppercase;
-      transform: rotate(-15deg);
-      background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(2px);
+      transform: rotate(-20deg);
+      background: rgba(255,255,255,0.02);
+      backdrop-filter: blur(1px);
       z-index: 30;
       pointer-events: none;
-      box-shadow: inset 0 0 15px rgba(204,0,0,0.1);
-      animation: stamp-wobble 10s infinite ease-in-out;
-    }
-    @keyframes stamp-wobble {
-      0%, 100% { transform: rotate(-15deg) scale(1); }
-      50% { transform: rotate(-18deg) scale(1.05); }
+      box-shadow: inset 0 0 10px rgba(204,0,0,0.1);
+      mix-blend-mode: multiply;
+      mask-image: url('https://www.transparenttextures.com/patterns/stardust.png');
     }
     .sello-municipal::after {
-      content: "CERTIFICADO POR EL ALCALDE DE FATONEWS";
+      content: "VERIFICADO POR EL AYUNTAMIENTO DE FATONEWS";
       padding: 10px;
+      line-height: 1;
     }
 
-    /* Logo Styling */
     .logo-glow {
       text-shadow: 6px 6px 0px #ff0000;
     }
@@ -83,7 +84,7 @@
     @media print {
       .no-print { display: none !important; }
       body { background: white !important; }
-      .paper-texture { background: none !important; }
+      .office-background { background: none !important; }
       .neo-border { border: 2px solid black !important; box-shadow: none !important; }
       .sello-municipal { border-color: black !important; color: black !important; animation: none !important; }
       @page { margin: 1cm; }
@@ -103,7 +104,7 @@
 }
 </script>
 </head>
-<body class="paper-texture">
+<body class="office-background">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

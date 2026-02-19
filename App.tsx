@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Radio, Send, Zap, AlertCircle, Coffee, RefreshCcw, Quote, Trash2, ArrowLeft, X, Home, User, LogIn, Camera, Image as ImageIcon, Upload, ShieldCheck, Award, MapPin, Printer, Archive, MessageSquare, History, Scale, Phone, Building2, Gavel, Newspaper } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Mic, Radio, Send, Zap, AlertCircle, Coffee, RefreshCcw, Quote, Trash2, ArrowLeft, X, Home, User, LogIn, Camera, Image as ImageIcon, Upload, ShieldCheck, Award, MapPin, Printer, Archive, MessageSquare, History, Scale, Phone, Building2, Gavel, Newspaper, ArrowRight, Search } from 'lucide-react';
 import { NewsArticle, AppView, Redactor } from './types';
 import { generateBreakingNews, generateNewsFromVoice, generateImage } from './services/gemini';
 import ArticleCard from './components/ArticleCard';
@@ -11,6 +11,7 @@ const App: React.FC = () => {
   const [transcript, setTranscript] = useState('');
   const [keyboardInput, setKeyboardInput] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const [user, setUser] = useState<Redactor | null>(null);
   const [loginForm, setLoginForm] = useState({ name: '', alias: '', bio: '' });
@@ -21,12 +22,12 @@ const App: React.FC = () => {
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<any>(null);
 
+  // Simulación de Base de Datos
   useEffect(() => {
-    const savedArticles = localStorage.getItem('fatonews_articles');
-    if (savedArticles) {
-      setArticles(JSON.parse(savedArticles));
+    const dbData = localStorage.getItem('fatonews_db');
+    if (dbData) {
+      setArticles(JSON.parse(dbData));
     } else {
       loadInitialContent();
     }
@@ -34,9 +35,10 @@ const App: React.FC = () => {
     if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
+  // Sincronización con "Base de Datos" (LocalStorage)
   useEffect(() => {
     if (articles.length > 0) {
-      localStorage.setItem('fatonews_articles', JSON.stringify(articles));
+      localStorage.setItem('fatonews_db', JSON.stringify(articles));
     }
   }, [articles]);
 
@@ -45,13 +47,43 @@ const App: React.FC = () => {
     try {
       const art = await generateBreakingNews();
       const img = await generateImage(art.imagePrompt);
-      setArticles([{ ...art, imageUrl: img }]);
+      const initialArt = { ...art, imageUrl: img };
+      setArticles([initialArt]);
     } catch (e: any) {
-      setError("Error municipal de carga.");
+      setError("Fallo en la conexión con el servidor municipal.");
     } finally {
       setIsGenerating(false);
     }
   };
+
+  const deleteArticle = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm("¿Confirmas que deseas DESTRUIR esta evidencia municipal? Esta acción es irreversible.")) {
+      const updated = articles.filter(a => a.id !== id);
+      setArticles(updated);
+      localStorage.setItem('fatonews_db', JSON.stringify(updated));
+    }
+  };
+
+  // Filtrado para la Hemeroteca
+  const filteredArticles = useMemo(() => {
+    return articles.filter(art => 
+      art.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      art.subtitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      art.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      art.category.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [articles, searchTerm]);
+
+  // Agrupación por fechas para el archivo
+  const groupedArticles = useMemo(() => {
+    return filteredArticles.reduce((acc: any, art) => {
+      const date = art.date || 'Sin Fecha';
+      if (!acc[date]) acc[date] = [];
+      acc[date].push(art);
+      return acc;
+    }, {});
+  }, [filteredArticles]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +93,7 @@ const App: React.FC = () => {
       name: loginForm.name,
       alias: loginForm.alias,
       avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${loginForm.alias}`,
-      bio: loginForm.bio || "Corresponsal de pasillo.",
+      bio: loginForm.bio || "Corresponsal de pasillo y experto en café frío.",
       articlesWritten: 0
     };
     setUser(newUser);
@@ -121,7 +153,7 @@ const App: React.FC = () => {
       setView('home');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e: any) {
-      setError("Error en la censura.");
+      setError("Error en la rotativa.");
     } finally {
       setIsGenerating(false);
     }
@@ -133,70 +165,194 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const tickerNews = [
-    ...articles.map(a => a.title.toUpperCase()), 
-    "ALERTA: EL BECARIO HA CONFUNDIDO EL TONER CON CAFÉ SOLUBLE", 
-    "URGENTE: EL AYUNTAMIENTO DECLARA LA GUERRA AL CLIP DE PAPEL",
-    "ÚLTIMA HORA: SE FILTRA EL MENÚ DE LA CENA DE EMPRESA Y ES SOLO PAN"
-  ];
+  const renderView = () => {
+    switch (view) {
+      case 'archive':
+        return (
+          <div className="max-w-7xl mx-auto py-24 px-4">
+            <header className="mb-20 text-center">
+              <h1 className="text-7xl font-black uppercase mb-8 border-b-[12px] border-black pb-6 tracking-tighter inline-block">Hemeroteca Municipal</h1>
+              <div className="max-w-2xl mx-auto mt-10 relative">
+                <input 
+                  type="text" 
+                  placeholder="Buscar escándalo por palabra clave..." 
+                  className="w-full neo-border px-12 py-5 text-xl font-black outline-none focus:bg-yellow-50 placeholder:text-gray-300"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={24} />
+              </div>
+            </header>
 
-  return (
-    <div className="min-h-screen pb-20 selection:bg-yellow-300">
-      <nav className="fixed top-0 left-0 right-0 z-[100] bg-black text-white px-8 py-3 flex justify-between items-center no-print border-b-4 border-red-600 shadow-2xl">
-        <button onClick={() => setView('home')} className="font-black text-xs tracking-widest hover:text-red-500 transition-colors uppercase flex items-center gap-3">
-          <Newspaper size={18}/> Portada Municipal
-        </button>
-        <div className="flex items-center gap-8">
-          {user ? (
-            <button onClick={() => setView('profile')} className="flex items-center gap-3 bg-white text-black px-4 py-1.5 neo-border-sm font-black text-[10px] hover:bg-yellow-400 transition-all">
-              <img src={user.avatarUrl} className="w-6 h-6 rounded-full border border-black"/>
-              <span>{user.alias}</span>
-            </button>
-          ) : (
-            <button onClick={() => setView('login')} className="bg-yellow-400 text-black px-6 py-2 neo-border-sm font-black text-[10px] uppercase hover:bg-white transition-all">ACCESO REDACCIÓN</button>
-          )}
-        </div>
-      </nav>
-
-      <div className="ticker-container text-white py-4 overflow-hidden mt-14 no-print relative z-[90]">
-        <div className="animate-ticker">
-          {[...tickerNews, ...tickerNews].map((text, i) => (
-            <span key={i} className="mx-16 font-black text-xs uppercase italic flex items-center gap-5 whitespace-nowrap">
-              <Zap size={22} className="text-yellow-400" /> {text}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <header className="max-w-7xl mx-auto px-4 pt-24 pb-20 text-center no-print relative">
-        <div className="cursor-pointer transition-all py-20 border-y-[12px] border-black border-double group relative" onClick={() => setView('home')}>
-          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white px-10 text-[10px] font-black uppercase tracking-[1em]">ESTRENO NACIONAL</div>
-          <div className="flex flex-col items-center justify-center leading-none">
-            <span className="bg-black text-white px-8 py-2 text-3xl font-black uppercase mb-2 tracking-[0.8em] neo-border-sm">AYUNTAMIEN</span>
-            <h1 className="newspaper-font text-[16vw] font-black tracking-tighter text-black uppercase -mt-10 logo-glow">FATONEWS</h1>
-            <div className="logo-badge -mt-12 ml-60 animate-bounce">DIARIO DEL CHISME</div>
+            {Object.keys(groupedArticles).length > 0 ? (
+              <div className="space-y-32">
+                {Object.entries(groupedArticles).map(([date, items]: [string, any]) => (
+                  <section key={date} className="relative">
+                    <div className="flex items-center gap-6 mb-16 border-b-4 border-black pb-4 sticky top-24 bg-[#fdfcf8]/90 backdrop-blur z-40">
+                      <Archive className="text-red-600" size={32} />
+                      <h2 className="text-4xl font-black uppercase tracking-widest">{date}</h2>
+                      <span className="ml-auto bg-black text-white px-4 py-1 font-black text-xs">{items.length} ARCHIVOS</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-20">
+                      {items.map((art: NewsArticle) => (
+                        <div key={art.id} className="relative group">
+                          <ArticleCard article={art} onOpen={openArticle} />
+                          <button 
+                            onClick={(e) => deleteArticle(art.id, e)}
+                            className="absolute top-2 right-2 p-3 bg-white text-red-600 neo-border-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 hover:text-white z-50"
+                            title="Destruir evidencia"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-40 neo-border bg-white italic font-black text-4xl text-gray-200 uppercase tracking-widest">
+                No hay archivos que coincidan con la búsqueda
+              </div>
+            )}
           </div>
-          <p className="newspaper-font text-4xl md:text-7xl font-black italic text-gray-800 mt-16 tracking-tighter group-hover:text-red-600 transition-colors">
-            "La verdad es aburrida, nuestra ficción no."
-          </p>
-        </div>
-        <div className="flex flex-col md:flex-row justify-between border-b-8 border-black py-6 text-xs font-black uppercase mt-10 tracking-widest bg-black text-white px-8">
-           <span>CENTRO DE OPERACIONES: PLANTA 3 - DESPACHO 302</span>
-           <span className="flex items-center gap-3">
-             <Radio size={16} className="animate-pulse text-red-500" /> ROTATIVA: {new Date().toLocaleTimeString('es-ES')}
-           </span>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 mt-16 min-h-[70vh]">
-        {view === 'home' ? (
+        );
+      case 'login':
+        return (
+          <div className="max-w-md mx-auto py-24 px-4">
+            <div className="neo-border bg-white p-10 relative">
+              <div className="absolute -top-6 -left-6 bg-red-600 text-white p-4 neo-border-sm -rotate-12 font-black">ACCESO RESTRINGIDO</div>
+              <h2 className="text-4xl font-black uppercase mb-10 text-center border-b-8 border-black pb-4 tracking-tighter">Ficha de Redactor</h2>
+              <form onSubmit={handleLogin} className="space-y-8">
+                <div>
+                  <label className="text-xs font-black uppercase block mb-2">Nombre en Nómina</label>
+                  <input type="text" required placeholder="F. de Tal" className="w-full border-4 border-black p-5 font-black uppercase outline-none focus:bg-yellow-50" value={loginForm.name} onChange={e => setLoginForm({...loginForm, name: e.target.value})} />
+                </div>
+                <div>
+                  <label className="text-xs font-black uppercase block mb-2">Nombre de Guerra (Alias)</label>
+                  <input type="text" required placeholder="El Chivato" className="w-full border-4 border-black p-5 font-black uppercase outline-none focus:bg-yellow-50" value={loginForm.alias} onChange={e => setLoginForm({...loginForm, alias: e.target.value})} />
+                </div>
+                <button type="submit" className="w-full bg-black text-white p-6 font-black uppercase tracking-widest text-lg neo-border-sm hover:bg-red-600 transition-all hover:-translate-y-1">FICHAR ENTRADA</button>
+              </form>
+            </div>
+          </div>
+        );
+      case 'profile':
+        if (!user) return null;
+        return (
+          <div className="max-w-5xl mx-auto py-24 px-4">
+            <div className="flex flex-col md:flex-row gap-16 items-start">
+              <div className="relative group">
+                <div className="w-64 h-64 neo-border bg-yellow-400 overflow-hidden">
+                  <img src={user.avatarUrl} className="w-full h-full object-cover" />
+                </div>
+                <button onClick={() => avatarInputRef.current?.click()} className="absolute -bottom-6 -right-6 bg-black text-white p-5 rounded-full neo-border-sm hover:bg-red-600 transition-colors">
+                  <Camera size={28} />
+                </button>
+                <input type="file" ref={avatarInputRef} className="hidden" accept="image/*" onChange={e => handleFileUpload(e, 'avatar')} />
+              </div>
+              <div className="flex-1 space-y-6 text-center md:text-left">
+                <h1 className="text-8xl font-black uppercase tracking-tighter leading-none">{user.name}</h1>
+                <p className="text-4xl italic font-black text-red-600">"{user.alias}"</p>
+                <div className="bg-white p-10 neo-border-sm text-2xl font-serif italic leading-relaxed">
+                  "{user.bio}"
+                </div>
+                <div className="flex flex-wrap gap-6 justify-center md:justify-start pt-6">
+                  <div className="bg-black text-white px-8 py-3 font-black uppercase text-sm">Escándalos publicados: {user.articlesWritten}</div>
+                  <button onClick={handleLogout} className="text-red-600 font-black uppercase text-sm hover:underline decoration-4 transition-all">Solicitar Excedencia</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'bulo':
+        return (
+          <div className="max-w-4xl mx-auto py-24 px-4 text-center">
+            <h1 className="text-7xl font-black uppercase mb-12 border-b-[16px] border-black pb-8 tracking-tighter">Nuestra Historia</h1>
+            <div className="font-serif text-3xl italic text-gray-700 leading-relaxed space-y-10">
+              <p>AyuntamienFatoNews nació de una conversación junto a la máquina de café (la que funciona mal, no la otra) un martes de lluvia.</p>
+              <p>Somos el único diario que garantiza que el 100% de sus noticias son fruto de la imaginación, el aburrimiento y el exceso de cafeína.</p>
+            </div>
+            <button onClick={() => setView('home')} className="mt-20 bg-black text-white px-12 py-6 font-black uppercase text-xl neo-border-sm hover:bg-red-600 transition-all">VOLVER A LA PORTADA</button>
+          </div>
+        );
+      case 'legal':
+        return (
+          <div className="max-w-4xl mx-auto py-24 px-4">
+            <h1 className="text-6xl font-black uppercase mb-16 border-b-8 border-black pb-4">CÓDIGO ÉTICO (OFICIAL)</h1>
+            <div className="space-y-10">
+              {["Toda noticia aquí publicada es mentira hasta que se demuestre lo contrario (nunca).", "Los nombres han sido cambiados para proteger al becario.", "Si te ofendes, es que eres el protagonista de la noticia.", "El café de cápsula es un derecho humano."].map((rule, i) => (
+                <div key={i} className={`p-8 neo-border bg-white transform ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'}`}>
+                  <p className="text-3xl font-black uppercase tracking-tight">{i + 1}. {rule}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      case 'article':
+        if (!selectedArticle) return null;
+        return (
+          <div className="max-w-5xl mx-auto px-4 py-16">
+            <div className="flex justify-between items-center mb-16 border-b-4 border-black pb-6 no-print">
+              <button onClick={() => setView('home')} className="font-black flex items-center gap-4 uppercase text-sm hover:text-red-700 transition-all group">
+                <ArrowLeft size={24} className="group-hover:-translate-x-2 transition-transform" /> VOLVER A PORTADA
+              </button>
+              <button onClick={() => window.print()} className="bg-black text-white px-8 py-3 font-black text-xs uppercase neo-border-sm hover:bg-red-600 transition-all">
+                IMPRIMIR ACTA
+              </button>
+            </div>
+            <article className="print-content">
+              <h1 className="newspaper-font text-7xl md:text-9xl font-black uppercase leading-[0.8] border-b-[20px] border-black pb-12 tracking-tighter mb-12">
+                {selectedArticle.title}
+              </h1>
+              <div className="flex flex-wrap items-center gap-10 mb-12 font-black uppercase text-lg border-y-4 border-black py-6 italic bg-white/40 px-6">
+                <span className="bg-black text-white px-4 py-1">{selectedArticle.category}</span>
+                <span className="text-red-600">CORRESPONSAL: {selectedArticle.author}</span>
+                <span className="ml-auto">{selectedArticle.date}</span>
+              </div>
+              <div className="relative mb-16">
+                 <div className="sello-municipal top-12 right-12 scale-150 z-30 opacity-100 shadow-2xl"></div>
+                 <img src={selectedArticle.imageUrl} className="w-full h-auto neo-border grayscale-0" />
+                 <div className="absolute -bottom-4 -left-4 bg-black text-white px-6 py-2 text-xs font-black uppercase neo-border-sm">FOTO-DENUNCIA Nº {selectedArticle.id.slice(0,4)}</div>
+              </div>
+              <p className="text-4xl font-black italic text-gray-500 mb-16 leading-tight border-l-[12px] border-red-600 pl-10">
+                "{selectedArticle.subtitle}"
+              </p>
+              <div className="font-serif text-3xl leading-relaxed space-y-12 first-letter:text-[14rem] first-letter:font-black first-letter:float-left first-letter:mr-10 first-letter:mt-4 first-letter:leading-none selection:bg-red-600 selection:text-white">
+                {selectedArticle.content.split('\n').map((p, i) => <p key={i}>{p}</p>)}
+              </div>
+              
+              <section className="mt-32 pt-16 border-t-8 border-black border-double no-print">
+                <h3 className="newspaper-font text-5xl font-black uppercase mb-12 flex items-center gap-6">
+                  <MessageSquare size={40} className="text-red-600"/> Reacciones del Pasillo
+                </h3>
+                <div className="grid gap-8">
+                  {selectedArticle.comments?.map((comment, i) => (
+                    <div key={i} className="bg-white p-8 neo-border flex gap-8 items-start hover:scale-[1.02] transition-transform">
+                      <div className="w-16 h-16 rounded-full border-4 border-black overflow-hidden bg-gray-100 flex-shrink-0">
+                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.avatarSeed}`} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="font-black uppercase text-red-600 text-lg">{comment.author}</p>
+                        <p className="text-2xl font-serif italic">"{comment.text}"</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </article>
+          </div>
+        );
+      default:
+        return (
           <>
             <section className="bg-white neo-border p-12 mb-24 no-print relative group overflow-hidden">
                <div className="logo-badge absolute -top-4 -left-4 z-10 scale-125">NUEVA FILTRACIÓN</div>
+               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Building2 size={300} /></div>
               <div className="flex flex-col lg:flex-row gap-16 relative z-10">
                 <div className="lg:w-1/3">
-                  <div className={`relative aspect-square neo-border overflow-hidden bg-gray-50 flex items-center justify-center transition-all ${pendingImage ? 'border-green-600 rotate-1' : 'border-black hover:rotate-2'}`}>
-                    {pendingImage ? <img src={pendingImage} className="w-full h-full object-cover" /> : <Building2 size={120} className="text-gray-100" />}
+                  <div className={`relative aspect-square neo-border overflow-hidden bg-gray-50 flex items-center justify-center transition-all ${pendingImage ? 'border-green-600 rotate-2' : 'border-black hover:rotate-3'}`}>
+                    {pendingImage ? <img src={pendingImage} className="w-full h-full object-cover" /> : <Camera size={120} className="text-gray-100" />}
                     <button onClick={() => fileInputRef.current?.click()} className="absolute bottom-8 left-8 right-8 bg-white border-4 border-black p-5 font-black text-xs uppercase hover:bg-yellow-400 transition-all flex items-center justify-center gap-4 shadow-[6px_6px_0px_black]">
                       <Upload size={22}/> {pendingImage ? 'CAMBIAR PRUEBA' : 'SUBIR EVIDENCIA'}
                     </button>
@@ -216,7 +372,7 @@ const App: React.FC = () => {
                       value={keyboardInput} 
                       onChange={e => setKeyboardInput(e.target.value)} 
                       onKeyPress={e => e.key === 'Enter' && handleGenerate(keyboardInput)} 
-                      placeholder="¿Qué ha pasado hoy en la oficina?" 
+                      placeholder="Cuéntanos el último lío de la oficina..." 
                       className="w-full neo-border px-10 py-8 text-3xl font-black outline-none placeholder:text-gray-200 focus:bg-yellow-50 transition-colors" 
                     />
                   </div>
@@ -233,9 +389,9 @@ const App: React.FC = () => {
               </div>
               {isGenerating && (
                 <div className="absolute inset-0 bg-white/98 z-[100] flex flex-col items-center justify-center animate-fadeIn text-center">
-                  <RefreshCcw className="animate-spin mb-10 text-red-600" size={100} />
+                  <RefreshCcw className="animate-spin mb-10 text-red-600" size={120} />
                   <h3 className="newspaper-font text-8xl font-black italic tracking-tighter">LA ROTATIVA RUGE...</h3>
-                  <p className="font-black uppercase text-black tracking-[1em] mt-4 animate-pulse">Imprimiendo la verdad...</p>
+                  <p className="font-black uppercase text-black tracking-[1em] mt-6 animate-pulse text-2xl">Imprimiendo el escándalo...</p>
                 </div>
               )}
             </section>
@@ -243,41 +399,86 @@ const App: React.FC = () => {
               {articles.map((art, i) => <ArticleCard key={art.id} article={art} isMain={i === 0} onOpen={openArticle} />)}
             </div>
           </>
-        ) : (
-          <div className="max-w-4xl mx-auto py-20">
-             {/* Aquí irían las otras vistas (article, login, etc) tal cual las teníamos */}
-             {selectedArticle && view === 'article' && (
-               <article className="print-content space-y-12">
-                  <button onClick={() => setView('home')} className="font-black flex items-center gap-3 uppercase text-sm hover:text-red-600 mb-10"><ArrowLeft size={20}/> VOLVER</button>
-                  <h1 className="newspaper-font text-7xl md:text-9xl font-black uppercase leading-[0.8] border-b-[16px] border-black pb-12 tracking-tighter">{selectedArticle.title}</h1>
-                  <div className="relative">
-                    <div className="sello-municipal top-10 right-10 scale-150 z-30 opacity-100 shadow-2xl"></div>
-                    <img src={selectedArticle.imageUrl} className="w-full h-auto neo-border" />
-                  </div>
-                  <p className="text-4xl font-black italic text-gray-500 leading-none">"{selectedArticle.subtitle}"</p>
-                  <div className="font-serif text-3xl leading-relaxed space-y-10 first-letter:text-[12rem] first-letter:font-black first-letter:float-left first-letter:mr-8 first-letter:mt-4 first-letter:leading-none">
-                    {selectedArticle.content.split('\n').map((p, i) => <p key={i}>{p}</p>)}
-                  </div>
-               </article>
-             )}
+        );
+    }
+  };
+
+  const tickerNews = [
+    ...articles.slice(0, 3).map(a => a.title.toUpperCase()), 
+    "ALERTA: LA CAFETERA DEL AYUNTAMIENTO HA SIDO SECUESTRADA POR UN CONCEJAL", 
+    "URGENTE: SE BUSCA AL BECARIO QUE SABE USAR EL EXCEL PARA QUE NOS ENSEÑE",
+    "ÚLTIMA HORA: EL ALCALDE DECLARA 'BIEN DE INTERÉS CULTURAL' EL PINCHO DE TORTILLA"
+  ];
+
+  return (
+    <div className="min-h-screen pb-20 selection:bg-red-600 selection:text-white">
+      <nav className="fixed top-0 left-0 right-0 z-[100] bg-black text-white px-8 py-4 flex justify-between items-center no-print border-b-4 border-red-600 shadow-2xl">
+        <button onClick={() => setView('home')} className="font-black text-sm tracking-widest hover:text-red-500 transition-colors uppercase flex items-center gap-4">
+          <Newspaper size={20}/> AyuntamienFatoNews Portada
+        </button>
+        <div className="flex items-center gap-10">
+          <button onClick={() => setView('archive')} className="hidden md:block text-xs font-black uppercase hover:text-red-600 transition-colors flex items-center gap-2">
+            <Archive size={14}/> Hemeroteca
+          </button>
+          {user ? (
+            <button onClick={() => setView('profile')} className="flex items-center gap-4 bg-white text-black px-5 py-2 neo-border-sm font-black text-xs hover:bg-yellow-400 transition-all">
+              <img src={user.avatarUrl} className="w-8 h-8 rounded-full border-2 border-black"/>
+              <span>{user.alias}</span>
+            </button>
+          ) : (
+            <button onClick={() => setView('login')} className="bg-yellow-400 text-black px-8 py-2 neo-border-sm font-black text-xs uppercase hover:bg-white transition-all tracking-widest">ACCESO REDACCIÓN</button>
+          )}
+        </div>
+      </nav>
+
+      <div className="ticker-container text-white py-5 overflow-hidden mt-16 no-print relative z-[90]">
+        <div className="animate-ticker">
+          {[...tickerNews, ...tickerNews].map((text, i) => (
+            <span key={i} className="mx-20 font-black text-sm uppercase italic flex items-center gap-6 whitespace-nowrap">
+              <Zap size={24} className="text-yellow-400 drop-shadow-[2px_2px_0px_black]" /> {text}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <header className="max-w-7xl mx-auto px-4 pt-24 pb-24 text-center no-print relative">
+        <div className="cursor-pointer transition-all py-24 border-y-[16px] border-black border-double group relative bg-white/30" onClick={() => setView('home')}>
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#fdfcf8] px-16 text-xs font-black uppercase tracking-[1.5em] text-gray-400">BOLETÍN OFICIAL DE PASILLO</div>
+          <div className="flex flex-col items-center justify-center leading-none">
+            <span className="bg-black text-white px-10 py-3 text-3xl font-black uppercase mb-3 tracking-[1em] neo-border-sm group-hover:bg-red-600 transition-all">AYUNTAMIEN</span>
+            <h1 className="newspaper-font text-[16vw] font-black tracking-tighter text-black uppercase -mt-12 logo-glow">FATONEWS</h1>
+            <div className="logo-badge -mt-16 ml-80 animate-bounce text-xl">DIARIO OFICIAL</div>
           </div>
-        )}
+          <p className="newspaper-font text-4xl md:text-8xl font-black italic text-gray-800 mt-20 tracking-tighter group-hover:text-red-600 transition-colors">
+            "La verdad es aburrida, nuestra ficción no."
+          </p>
+        </div>
+        <div className="flex flex-col md:flex-row justify-between border-b-[12px] border-black py-8 text-sm font-black uppercase mt-12 tracking-widest bg-black text-white px-12">
+           <span className="flex items-center gap-4"><Building2 size={20}/> PLANTA 3 - FILTRACIONES DIRECTAS</span>
+           <span className="flex items-center gap-4 justify-center md:justify-end">
+             <Radio size={20} className="animate-pulse text-red-500" /> ROTATIVA CALIENTE: {new Date().toLocaleTimeString('es-ES')}
+           </span>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 mt-20 min-h-[80vh]">
+        {renderView()}
       </main>
 
-      <footer className="mt-80 border-t-[12px] border-black border-double pt-32 pb-20 text-center no-print bg-white/50 relative">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#fdfcf8] px-16">
-          <Quote size={80} className="text-black rotate-12 opacity-10" />
+      <footer className="mt-96 border-t-[20px] border-black border-double pt-40 pb-32 text-center no-print bg-white/50 relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#fdfcf8] px-24">
+          <Quote size={120} className="text-black rotate-12 opacity-5" />
         </div>
-        <h2 className="newspaper-font text-7xl font-black uppercase tracking-tighter mb-20 drop-shadow-[6px_6px_0px_#ff0000]">AyuntamienFatoNews</h2>
-        <div className="flex flex-wrap justify-center gap-20 text-sm font-black uppercase tracking-[0.4em] text-gray-400 mb-24">
-          <button onClick={() => setView('bulo')} className="hover:text-red-600 underline decoration-4 underline-offset-8">Historia</button>
-          <button onClick={() => setView('legal')} className="hover:text-red-600 underline decoration-4 underline-offset-8">Código Ético</button>
-          <button onClick={() => setView('contacto')} className="hover:text-red-600 underline decoration-4 underline-offset-8">Sugerencias</button>
-          <button onClick={() => setView('archive')} className="hover:text-red-600 underline decoration-4 underline-offset-8">Hemeroteca</button>
+        <h2 className="newspaper-font text-8xl font-black uppercase tracking-tighter mb-24 drop-shadow-[10px_10px_0px_#ff0000]">AyuntamienFatoNews</h2>
+        <div className="flex flex-wrap justify-center gap-24 text-lg font-black uppercase tracking-[0.5em] text-gray-400 mb-32 px-10">
+          <button onClick={() => setView('bulo')} className="hover:text-red-600 underline decoration-[8px] underline-offset-[16px] transition-all">Nuestra Historia</button>
+          <button onClick={() => setView('legal')} className="hover:text-red-600 underline decoration-[8px] underline-offset-[16px] transition-all">Código Ético</button>
+          <button onClick={() => setView('contacto')} className="hover:text-red-600 underline decoration-[8px] underline-offset-[16px] transition-all">Ventanilla 4</button>
+          <button onClick={() => setView('archive')} className="hover:text-red-600 underline decoration-[8px] underline-offset-[16px] transition-all">Hemeroteca</button>
         </div>
-        <div className="flex flex-col items-center gap-6 opacity-20">
-          <p className="text-[10px] font-black uppercase tracking-[2em]">© {new Date().getFullYear()} FATONEWS MEDIA GROUP INC.</p>
-          <div className="flex gap-6"><Building2 size={30}/><Scale size={30}/><Archive size={30}/></div>
+        <div className="flex flex-col items-center gap-10 opacity-30">
+          <p className="text-xs font-black uppercase tracking-[2.5em]">AYUNTAMIENFATONEWS MEDIA GROUP INC.</p>
+          <div className="flex gap-12"><Building2 size={40}/><Scale size={40}/><Archive size={40}/></div>
         </div>
       </footer>
     </div>
