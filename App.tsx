@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Mic, Radio, Send, Zap, Coffee, RefreshCcw, ArrowLeft, Archive, MessageSquare, History, Scale, Building2, Newspaper, Search, Mail, Twitter, Instagram, Linkedin, Globe, MapPin } from 'lucide-react';
+import { Mic, Radio, Send, Zap, Coffee, RefreshCcw, ArrowLeft, Archive, MessageSquare, Scale, Building2, Newspaper, Search, Mail, Twitter, Instagram, Linkedin, Globe, MapPin, User, ChevronRight, AlertTriangle } from 'lucide-react';
 import { NewsArticle, AppView, Redactor } from './types';
 import { generateBreakingNews, generateNewsFromVoice, generateImage } from './services/gemini';
 import ArticleCard from './components/ArticleCard';
@@ -22,7 +22,6 @@ const App: React.FC = () => {
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   
   const [pendingImage, setPendingImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const dbData = localStorage.getItem('fatonews_db');
@@ -48,7 +47,7 @@ const App: React.FC = () => {
       const img = await generateImage(art.imagePrompt);
       setArticles([{ ...art, imageUrl: img }]);
     } catch (e: any) {
-      setError("Error municipal.");
+      setError("Error municipal grave.");
     } finally {
       setIsGenerating(false);
     }
@@ -66,7 +65,7 @@ const App: React.FC = () => {
       setView('home');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e: any) {
-      setError("Error de rotativa.");
+      setError("La rotativa ha explotado.");
     } finally {
       setIsGenerating(false);
     }
@@ -78,178 +77,249 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const filteredArticles = useMemo(() => {
-    return articles.filter(art => 
-      art.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      art.author.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [articles, searchTerm]);
+  const tickerItems = [
+    "ÚLTIMA HORA: SE ACABARON LOS SOBRES DE AZÚCAR EN LA PLANTA 3",
+    "ESCÁNDALO: EL JEFE DE SECCIÓN HA SIDO VISTO USANDO CHATGPT PARA EL EMAIL DE BIENVENIDA",
+    "EXCLUSIVA: LA MÁQUINA DE CAFÉ EMPIEZA A COBRAR EN CRIPTOMONEDAS",
+    "URGENTE: EL BECARIO SABE DEMASIADO SOBRE EL HISTORIAL DEL NAVEGADOR DEL ALCALDE"
+  ];
 
   return (
-    <div className="min-h-screen pb-20">
-      {/* Navegación Minimalista Superior */}
-      <nav className="bg-white border-b border-gray-200 py-3 px-8 flex justify-between items-center no-print sticky top-0 z-[100]">
-        <div className="flex items-center gap-6">
-          <button onClick={() => setView('home')} className="text-xs font-black uppercase tracking-widest text-[#5a8a6a] flex items-center gap-2">
-            <Newspaper size={16}/> Portada
-          </button>
-          <button onClick={() => setView('archive')} className="text-xs font-bold uppercase text-gray-400 hover:text-black transition-colors">
-            Hemeroteca
-          </button>
+    <div className="min-h-screen selection:bg-[#5a8a6a] selection:text-white">
+      {/* Ticker Superior canalla */}
+      <div className="bg-black text-white py-2 overflow-hidden no-print">
+        <div className="animate-ticker">
+          {[...tickerItems, ...tickerItems].map((item, i) => (
+            <span key={i} className="mx-12 text-[10px] font-black uppercase tracking-widest flex items-center gap-4">
+              <AlertTriangle size={12} className="text-yellow-400"/> {item}
+            </span>
+          ))}
         </div>
-        <div className="flex items-center gap-6">
+      </div>
+
+      {/* Navegación Sticky Moderna */}
+      <nav className="bg-white/90 backdrop-blur-md border-b border-gray-100 py-4 px-6 md:px-12 flex justify-between items-center no-print sticky top-0 z-[100] transition-all">
+        <div className="flex items-center gap-8">
+          <button onClick={() => setView('home')} className="newspaper-font text-2xl font-black title-green tracking-tighter hover:opacity-70 transition-opacity">
+            AFN
+          </button>
+          <div className="hidden md:flex items-center gap-6">
+            <button onClick={() => setView('home')} className="text-[10px] font-black uppercase tracking-widest hover:text-[#5a8a6a]">Portada</button>
+            <button onClick={() => setView('archive')} className="text-[10px] font-black uppercase tracking-widest hover:text-[#5a8a6a]">Hemeroteca</button>
+            <button onClick={() => setView('bulo')} className="text-[10px] font-black uppercase tracking-widest hover:text-[#5a8a6a]">El Bulo</button>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="relative hidden lg:block">
+            <input 
+              type="text" 
+              placeholder="Buscar escándalo..." 
+              className="bg-gray-100 rounded-full px-4 py-1.5 text-xs font-medium outline-none focus:ring-1 focus:ring-[#5a8a6a] w-48"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={14}/>
+          </div>
           {user ? (
-            <button onClick={() => setView('profile')} className="flex items-center gap-2 text-xs font-bold uppercase">
-              <span className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
+            <button onClick={() => setView('profile')} className="flex items-center gap-2 bg-[#5a8a6a]/10 text-[#5a8a6a] px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:bg-[#5a8a6a]/20">
+              <span className="w-5 h-5 rounded-full overflow-hidden border border-[#5a8a6a]/30">
                 <img src={user.avatarUrl} className="w-full h-full object-cover"/>
               </span>
               {user.alias}
             </button>
           ) : (
-            <button onClick={() => setView('login')} className="text-[10px] font-bold border border-black px-3 py-1 uppercase hover:bg-black hover:text-white transition-all">Acceso Redacción</button>
+            <button onClick={() => setView('login')} className="bg-black text-white px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#5a8a6a] transition-all">Acceso</button>
           )}
         </div>
       </nav>
 
-      {/* Header Estilo Imagen Proporcionada */}
-      <header className="max-w-6xl mx-auto px-6 pt-12 pb-8 text-center bg-white mt-4 border-x border-gray-100">
-        <h1 className="newspaper-font text-8xl md:text-[120px] font-black title-green leading-none mb-2">
-          AYUNTAMIENFATONEWS
-        </h1>
-        
-        <div className="header-line py-2 flex flex-col md:flex-row justify-between items-center text-[10px] font-bold uppercase tracking-widest px-2">
-          <div className="flex items-center gap-2">
-            <Globe size={12}/> www.fato-news.es
+      <header className="max-w-7xl mx-auto px-6 pt-16 md:pt-24 pb-12 text-center bg-white">
+        <div className="space-y-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Diario Municipal • Desde 1994 • Planta 3</p>
+          <h1 className="newspaper-font text-6xl md:text-[160px] font-black title-green leading-[0.8] mb-8 tracking-tighter drop-shadow-sm">
+            AYUNTAMIEN<br className="md:hidden" />FATONEWS
+          </h1>
+          <div className="header-rule flex flex-col md:flex-row justify-between items-center py-2 text-[9px] md:text-[10px] font-bold uppercase tracking-widest px-4 gap-4 md:gap-0">
+            <span>Vol. LXIX — No. 1.337</span>
+            <span className="md:absolute md:left-1/2 md:-translate-x-1/2 flex items-center gap-2 italic">
+              <Globe size={12}/> www.fato-news.es — {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </span>
+            <span>Edición Digital Canalla</span>
           </div>
-          <div className="flex items-center gap-2 mt-2 md:mt-0">
-            <MapPin size={12}/> Planta 3, Despacho 302, Edificio Municipal
-          </div>
-        </div>
-
-        <div className="py-6 border-b border-gray-100">
-          <p className="font-black text-2xl md:text-5xl uppercase leading-none tracking-tighter">
-            Últimos acontecimientos de nuestro entorno laboral
-          </p>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 bg-white border-x border-gray-100 min-h-screen">
+      <main className="max-w-7xl mx-auto px-6 bg-white min-h-screen">
         {view === 'home' ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pt-12">
-            
-            {/* Artículo Principal (Ocupa todo el ancho arriba) */}
-            {articles.length > 0 && (
-              <ArticleCard article={articles[0]} isMain={true} onOpen={openArticle} />
-            )}
+          <div className="space-y-16 py-8">
+            {/* Main Article Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              {articles.length > 0 && (
+                <ArticleCard article={articles[0]} isMain={true} onOpen={openArticle} />
+              )}
+            </div>
 
-            {/* Formulario de Generación Estilo "Carta al Editor" */}
-            <div className="col-span-1 md:col-span-3 bg-[#f3f5f2] p-8 border-y-2 border-gray-200 my-12">
-              <div className="max-w-3xl mx-auto text-center space-y-6">
-                <h3 className="newspaper-font text-3xl font-bold italic">Buzón de Filtraciones</h3>
-                <p className="text-sm font-medium text-gray-600 uppercase tracking-widest">Capture un rumor de pasillo para la rotativa</p>
+            {/* Rogue Generation Box - Estilo Moderno */}
+            <section className="bg-black text-white p-10 md:p-16 rounded-3xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12 group-hover:rotate-45 transition-transform duration-700">
+                <Newspaper size={200}/>
+              </div>
+              <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8">
+                <h2 className="newspaper-font text-4xl md:text-6xl font-black italic">¿Tienes un chisme que queme?</h2>
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-gray-400">Nuestra rotativa no juzga, solo publica.</p>
                 
-                <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex flex-col md:flex-row gap-4 bg-zinc-900 p-2 rounded-2xl md:rounded-full border border-zinc-800">
                   <input 
                     type="text" 
                     value={keyboardInput}
                     onChange={(e) => setKeyboardInput(e.target.value)}
-                    placeholder="Escribe el chisme aquí..."
-                    className="flex-1 border-b-2 border-black bg-transparent py-3 px-4 font-bold outline-none focus:border-[#5a8a6a]"
+                    placeholder="Ejem: 'El concejal ha pedido 400 fotocopias de su cara'..."
+                    className="flex-1 bg-transparent py-4 px-8 font-bold text-lg outline-none placeholder:text-zinc-700"
+                    onKeyPress={(e) => e.key === 'Enter' && handleGenerate(keyboardInput)}
                   />
-                  <button 
-                    onClick={() => handleGenerate(keyboardInput)}
-                    disabled={isGenerating}
-                    className="bg-black text-white px-8 py-3 font-black uppercase text-xs hover:bg-[#5a8a6a] transition-all disabled:opacity-50"
-                  >
-                    {isGenerating ? 'Imprimiendo...' : 'Publicar'}
-                  </button>
-                  <button 
-                    onClick={() => setIsRecording(!isRecording)} 
-                    className={`p-3 rounded-full border-2 ${isRecording ? 'border-red-500 text-red-500 animate-pulse' : 'border-black'}`}
-                  >
-                    <Mic size={20}/>
-                  </button>
+                  <div className="flex gap-2 p-1">
+                    <button 
+                      onClick={() => setIsRecording(!isRecording)} 
+                      className={`p-4 rounded-full transition-all ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-zinc-800 hover:bg-zinc-700'}`}
+                    >
+                      <Mic size={24}/>
+                    </button>
+                    <button 
+                      onClick={() => handleGenerate(keyboardInput)}
+                      disabled={isGenerating}
+                      className="bg-[#5a8a6a] text-white px-10 rounded-full font-black uppercase text-xs hover:bg-white hover:text-black transition-all disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {isGenerating ? <RefreshCcw className="animate-spin" size={16}/> : <Send size={16}/>}
+                      {isGenerating ? 'Enviando...' : 'Publicar'}
+                    </button>
+                  </div>
                 </div>
+                {transcript && <div className="text-xs text-[#5a8a6a] animate-pulse">Detectado: "{transcript}"</div>}
               </div>
-            </div>
+            </section>
 
-            {/* Artículos Secundarios */}
-            {articles.slice(1).map((art) => (
-              <ArticleCard key={art.id} article={art} onOpen={openArticle} />
-            ))}
+            {/* Secondary Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16">
+              {articles.slice(1).map((art) => (
+                <ArticleCard key={art.id} article={art} onOpen={openArticle} />
+              ))}
+            </div>
           </div>
         ) : view === 'article' && selectedArticle ? (
-          <div className="max-w-3xl mx-auto py-12 space-y-12">
-            <button onClick={() => setView('home')} className="flex items-center gap-2 text-xs font-bold uppercase text-gray-400 hover:text-black">
-              <ArrowLeft size={16}/> Regresar
+          <div className="max-w-4xl mx-auto py-12 space-y-16">
+            <button onClick={() => setView('home')} className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-black transition-colors">
+              <ArrowLeft size={16}/> Volver a la portada
             </button>
             
-            <header className="space-y-6">
-              <span className="inline-block bg-[#5a8a6a] text-white px-3 py-1 text-[10px] font-black uppercase">{selectedArticle.category}</span>
-              <h1 className="newspaper-font text-6xl md:text-8xl font-black leading-none uppercase tracking-tighter">
+            <header className="space-y-8 text-center">
+              <div className="flex justify-center">
+                <span className="bg-[#5a8a6a] text-white px-4 py-1 text-[10px] font-black uppercase tracking-widest rounded-full">{selectedArticle.category}</span>
+              </div>
+              <h1 className="newspaper-font text-5xl md:text-[100px] font-black leading-[0.85] uppercase tracking-tighter">
                 {selectedArticle.title}
               </h1>
-              <p className="text-2xl font-bold italic border-l-4 border-[#5a8a6a] pl-6 text-gray-500">
+              <p className="text-2xl md:text-4xl font-bold italic text-gray-500 max-w-2xl mx-auto leading-tight">
                 "{selectedArticle.subtitle}"
               </p>
             </header>
 
-            <div className="relative">
-              <div className="sello-municipal -top-4 -right-4 scale-125"></div>
-              <img src={selectedArticle.imageUrl} className="w-full h-auto grayscale-0 border-b-8 border-black"/>
-              <p className="text-[10px] font-bold uppercase text-gray-400 mt-2 text-right">Archivo: {selectedArticle.id}</p>
+            <div className="relative group">
+              <div className="sello-municipal -top-6 -left-6 scale-150"></div>
+              <img src={selectedArticle.imageUrl} className="w-full h-auto grayscale-0 rounded-2xl modern-shadow transition-transform duration-700 hover:scale-[1.01]"/>
+              <div className="absolute -bottom-4 -right-4 bg-black text-white px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xl">Evidencia ID: {selectedArticle.id.slice(0,6)}</div>
             </div>
 
-            <div className="font-serif text-xl leading-relaxed text-gray-800 space-y-6 columns-1 md:columns-2 gap-10">
-              {selectedArticle.content.split('\n').map((p, i) => <p key={i}>{p}</p>)}
+            <div className="news-column news-column-2 font-serif text-2xl leading-relaxed text-gray-800 space-y-8 text-justify first-letter:text-8xl first-letter:font-black first-letter:text-[#5a8a6a] first-letter:mr-3 first-letter:float-left">
+              {selectedArticle.content.split('\n').map((p, i) => <p key={i} className="mb-6">{p}</p>)}
             </div>
 
-            <footer className="pt-12 border-t border-gray-100">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gray-100"></div>
+            <footer className="pt-20 border-t-2 border-gray-100 flex flex-col md:flex-row justify-between items-center gap-10">
+              <div className="flex items-center gap-6">
+                <div className="w-20 h-20 rounded-full bg-gray-100 border-4 border-[#5a8a6a]/20 overflow-hidden shadow-inner">
+                   <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedArticle.author}`} />
+                </div>
                 <div>
-                  <p className="text-xs font-bold uppercase">Escrito por</p>
-                  <p className="font-black uppercase text-[#5a8a6a]">{selectedArticle.author}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Escrito por la pluma de</p>
+                  <p className="newspaper-font text-3xl font-black text-[#5a8a6a]">{selectedArticle.author}</p>
                 </div>
               </div>
+              <button onClick={() => window.print()} className="bg-black text-white px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#5a8a6a] transition-all">Imprimir Acta Oficial</button>
             </footer>
+
+            {/* Comentarios canallas */}
+            <section className="bg-gray-50 p-12 rounded-3xl space-y-10 no-print">
+               <h3 className="newspaper-font text-4xl font-black uppercase tracking-tighter flex items-center gap-4">
+                 <MessageSquare size={32} className="text-[#5a8a6a]"/> El Murmullo del Pasillo
+               </h3>
+               <div className="grid gap-6">
+                 {selectedArticle.comments?.map((c, i) => (
+                   <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex gap-6 items-start">
+                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                       <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${c.avatarSeed}`} />
+                     </div>
+                     <div className="space-y-1">
+                       <p className="font-black text-xs uppercase text-[#5a8a6a]">{c.author}</p>
+                       <p className="font-serif italic text-lg leading-tight">"{c.text}"</p>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+            </section>
+          </div>
+        ) : view === 'login' ? (
+          <div className="max-w-md mx-auto py-32 space-y-12">
+            <h2 className="newspaper-font text-5xl font-black text-center uppercase tracking-tighter">Ficha de Redactor</h2>
+            <form onSubmit={(e) => { e.preventDefault(); /* login logic */ }} className="space-y-6">
+              <input type="text" placeholder="Tu Nombre Real (En nómina)" className="w-full bg-gray-100 p-5 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-[#5a8a6a] transition-all" />
+              <input type="text" placeholder="Tu Alias Canalla" className="w-full bg-gray-100 p-5 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-[#5a8a6a] transition-all" />
+              <button className="w-full bg-black text-white p-5 rounded-full font-black uppercase tracking-[0.2em] hover:bg-[#5a8a6a] transition-all">Fichar Entrada</button>
+            </form>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-[60vh]">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-300">Sección en construcción burocrática...</p>
+          <div className="flex flex-col items-center justify-center h-[60vh] space-y-6">
+            <RefreshCcw className="animate-spin text-gray-200" size={64} />
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-300">Tramitando expediente en Planta 4...</p>
           </div>
         )}
       </main>
 
-      {/* Footer Minimalista */}
-      <footer className="bg-[#2d2d2d] text-white pt-24 pb-12 mt-24">
-        <div className="max-w-6xl mx-auto px-8 grid grid-cols-1 md:grid-cols-3 gap-16 border-b border-gray-700 pb-16">
-          <div className="space-y-6">
-            <h2 className="newspaper-font text-3xl font-black text-[#5a8a6a]">AYUNTAMIENFATONEWS</h2>
-            <p className="text-sm font-medium text-gray-400 italic">"Desde 1994 sirviendo la verdad más cuestionable de la administración pública."</p>
-          </div>
-          <div className="space-y-4">
-            <h4 className="text-xs font-black uppercase tracking-widest text-red-500">Navegación</h4>
-            <ul className="text-sm space-y-2 font-bold uppercase tracking-tighter text-gray-300">
-              <li><button onClick={() => setView('home')} className="hover:text-white">Portada</button></li>
-              <li><button onClick={() => setView('archive')} className="hover:text-white">Hemeroteca</button></li>
-              <li><button onClick={() => setView('legal')} className="hover:text-white">Código de Honor</button></li>
-            </ul>
-          </div>
-          <div className="space-y-6">
-            <h4 className="text-xs font-black uppercase tracking-widest text-red-500">Suscripción</h4>
-            <div className="flex">
-              <input type="email" placeholder="Email corporativo..." className="bg-transparent border-b border-gray-600 flex-1 py-2 text-xs outline-none focus:border-[#5a8a6a]"/>
-              <button className="text-[10px] font-black uppercase ml-4 text-[#5a8a6a]">Ok</button>
+      {/* Footer Periódico Moderno */}
+      <footer className="bg-white border-t border-gray-100 pt-32 pb-16 no-print">
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-24">
+            <div className="md:col-span-2 space-y-8">
+              <h2 className="newspaper-font text-6xl font-black title-green tracking-tighter">AYUNTAMIEN<br/>FATONEWS</h2>
+              <p className="text-xl font-medium text-gray-400 max-w-md italic leading-tight">
+                "La verdad tiene muchas caras, nosotros preferimos la que tiene más gracia."
+              </p>
+              <div className="flex gap-4">
+                <a href="#" className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-[#5a8a6a] hover:text-white transition-all"><Twitter size={20}/></a>
+                <a href="#" className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-[#5a8a6a] hover:text-white transition-all"><Instagram size={20}/></a>
+                <a href="#" className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-[#5a8a6a] hover:text-white transition-all"><Linkedin size={20}/></a>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-[#5a8a6a]">Secciones</h4>
+              <ul className="space-y-3 font-bold text-sm uppercase tracking-tighter text-gray-500">
+                <li><button onClick={() => setView('home')} className="hover:text-black">Titulares</button></li>
+                <li><button onClick={() => setView('archive')} className="hover:text-black">Hemeroteca</button></li>
+                <li><button onClick={() => setView('bulo')} className="hover:text-black">El Bulo</button></li>
+                <li><button onClick={() => setView('legal')} className="hover:text-black">Ética de Pasillo</button></li>
+              </ul>
+            </div>
+            <div className="space-y-6">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-[#5a8a6a]">Legal</h4>
+              <p className="text-xs font-medium text-gray-400">Todo el contenido es satírico. Cualquier parecido con la realidad es un error de la administración.</p>
+              <button className="text-[10px] font-black uppercase bg-black text-white px-4 py-2 rounded-full hover:bg-red-600 transition-all">Suscripción Premium</button>
             </div>
           </div>
-        </div>
-        <div className="max-w-6xl mx-auto px-8 pt-8 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.5em] text-gray-600">
-          <span>© 2024 AYUNTAMIENFATONEWS MEDIA</span>
-          <div className="flex gap-4">
-            <Twitter size={12}/>
-            <Instagram size={12}/>
-            <Linkedin size={12}/>
+          <div className="pt-12 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-8 text-[9px] font-black uppercase tracking-[0.4em] text-gray-300">
+            <span>© 1994-2024 AyuntamienFatoNews — Todos los derechos burocráticos reservados</span>
+            <div className="flex gap-8">
+              <span>Planta 3</span>
+              <span>Ventanilla 2</span>
+              <span>Ext. 404</span>
+            </div>
           </div>
         </div>
       </footer>
