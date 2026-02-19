@@ -1,6 +1,5 @@
 import React from 'react';
 import { NewsArticle } from '../types';
-import { Share2, ArrowRight } from 'lucide-react';
 
 interface ArticleCardProps {
   article: NewsArticle;
@@ -9,80 +8,65 @@ interface ArticleCardProps {
 }
 
 const ArticleCard: React.FC<ArticleCardProps> = ({ article, isMain = false, onOpen }) => {
-  return (
-    <div 
-      className={`group relative flex flex-col cursor-pointer bg-white transition-all ${isMain ? 'md:col-span-2 lg:col-span-3 border-b-[12px] border-black pb-16' : 'border-b-4 border-black/5 pb-12 hover:border-black/20'}`}
-      onClick={() => onOpen(article)}
-    >
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter">
-          <span className="bg-red-600 text-white px-3 py-1 neo-border-sm">{article.category}</span>
-          <span className="text-gray-400">{article.date}</span>
-        </div>
-        <Share2 size={16} className="text-gray-300 hover:text-black transition-colors" />
-      </div>
-      
-      {isMain ? (
-        <div className="grid lg:grid-cols-5 gap-16 items-start">
-          <div className="lg:col-span-3 space-y-8">
-            <h2 className="newspaper-font text-6xl md:text-8xl font-black leading-[0.85] tracking-tighter group-hover:text-red-600 transition-colors">
-              {article.title}
-            </h2>
-            <p className="text-3xl font-black italic text-gray-500 leading-none">
-              — {article.subtitle}
-            </p>
-            <div className="prose prose-2xl max-w-none text-gray-800 leading-relaxed font-serif line-clamp-4">
-              {article.content.split('\n')[0]}
-            </div>
-            <div className="flex items-center gap-6 pt-8 border-t-4 border-black">
-              <div className="w-16 h-16 rounded-full border-4 border-black overflow-hidden bg-yellow-400">
-                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${article.author}`} alt="Avatar" />
-              </div>
-              <div>
-                <p className="text-xs font-black text-gray-400 uppercase">Enviado Especial</p>
-                <p className="text-xl font-black uppercase">{article.author}</p>
-              </div>
-              <button className="ml-auto bg-black text-white px-8 py-4 font-black uppercase text-sm neo-border-sm group-hover:bg-red-600 transition-colors flex items-center gap-3">
-                VER PORTADA <ArrowRight size={20} />
-              </button>
-            </div>
-          </div>
-          <div className="lg:col-span-2 relative">
-             <div className="sello-municipal -top-6 -right-6 scale-125 z-20"></div>
-             <div className="neo-border overflow-hidden aspect-[3/4] bg-gray-100">
-               <img 
-                 src={article.imageUrl || `https://picsum.photos/seed/${article.id}/800/1000`} 
-                 alt={article.title}
-                 className="object-cover w-full h-full grayscale group-hover:grayscale-0 transition-all duration-700"
-               />
-               <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/90 text-white text-[10px] font-black uppercase tracking-widest text-center border-t-2 border-red-600">
-                 ARCHIVO MUNICIPAL Nº {article.id.slice(0,6).toUpperCase()}
-               </div>
-             </div>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col h-full">
-          <div className="relative mb-8 aspect-video neo-border-sm overflow-hidden bg-gray-100">
-            <div className="sello-municipal -top-4 -right-4 scale-75 z-20 opacity-90 group-hover:opacity-100 transition-opacity"></div>
+  if (isMain) {
+    return (
+      <div 
+        className="col-span-1 md:col-span-3 lg:col-span-3 cursor-pointer group mb-12"
+        onClick={() => onOpen(article)}
+      >
+        <h2 className="newspaper-font text-5xl md:text-7xl font-black uppercase mb-6 leading-none tracking-tight group-hover:text-[#5a8a6a] transition-colors">
+          {article.title}
+        </h2>
+        
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+          <div className="relative">
+            <div className="sello-municipal top-4 right-4"></div>
             <img 
-              src={article.imageUrl || `https://picsum.photos/seed/${article.id}/600/400`} 
+              src={article.imageUrl || `https://picsum.photos/seed/${article.id}/800/600`} 
               alt={article.title}
-              className="object-cover w-full h-full grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+              className="w-full h-auto object-cover border-b-4 border-[#5a8a6a]"
             />
           </div>
-          <h3 className="newspaper-font text-4xl font-black mb-4 leading-none tracking-tighter group-hover:text-red-600 transition-colors">
-            {article.title}
-          </h3>
-          <p className="text-lg text-gray-500 italic font-medium leading-snug line-clamp-3 mb-8">
-            {article.subtitle}
-          </p>
-          <div className="mt-auto flex items-center justify-between font-black uppercase text-[10px] pt-4 border-t border-black/10">
-             <span>POR {article.author}</span>
-             <span className="text-red-600">LEER →</span>
+          <div className="space-y-6">
+            <p className="font-bold text-lg leading-snug">
+              {article.subtitle}
+            </p>
+            <div className="font-serif text-gray-700 leading-relaxed text-lg line-clamp-6">
+              {article.content}
+            </div>
+            <div className="pt-4 border-t border-gray-200 text-xs font-bold uppercase tracking-widest text-gray-400">
+              Corresponsal: {article.author} | {article.date}
+            </div>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="flex flex-col cursor-pointer group space-y-4 pb-8 border-b border-gray-100 last:border-0"
+      onClick={() => onOpen(article)}
+    >
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <img 
+          src={article.imageUrl || `https://picsum.photos/seed/${article.id}/600/400`} 
+          alt={article.title}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      </div>
+      <div className="space-y-2">
+        <h3 className="font-black text-2xl leading-tight group-hover:text-[#5a8a6a] transition-colors">
+          {article.title}
+        </h3>
+        <p className="text-sm font-medium text-gray-500 italic line-clamp-3">
+          {article.subtitle}
+        </p>
+        <div className="text-[10px] font-bold uppercase tracking-tighter text-gray-400 pt-2 flex justify-between">
+          <span>{article.category}</span>
+          <span>{article.date}</span>
+        </div>
+      </div>
     </div>
   );
 };
